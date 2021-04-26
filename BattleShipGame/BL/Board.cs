@@ -44,13 +44,13 @@ namespace BattleShipGame.BL
             {
                 PlaceShipRequest shipToPlace = new PlaceShipRequest
                 {
-                    Direction = (r.Next(1, 4)) switch
-                        {
-                            1 => ShipDirection.Left,
-                            2 => ShipDirection.Right,
-                            3 => ShipDirection.Up,
-                            _ => ShipDirection.Down,
-                        },
+                    Direction = (r.Next(1, 5)) switch
+                    {
+                        1 => ShipDirection.Left,
+                        2 => ShipDirection.Right,
+                        3 => ShipDirection.Up,
+                        _ => ShipDirection.Down,
+                    },
                     BoardPosition = new Point(r.Next(1, 11), r.Next(1, 11)),
                     ShipType = shipType
                 };
@@ -78,16 +78,38 @@ namespace BattleShipGame.BL
             BoardPositions.Add(shotPosition, shotStatus);
         }
 
-        private bool PlaceShip(PlaceShipRequest request)
+        internal bool PlaceShip(PlaceShipRequest request)
         {
             Ship newShip = new Ship(request.ShipType);
-            return request.Direction switch
+
+            Point currentPosition = request.BoardPosition;
+
+            while (newShip.BoardPositions.Count() < (int)request.ShipType)
             {
-                ShipDirection.Down => PlaceShipDown(request.BoardPosition, newShip),
-                ShipDirection.Up => PlaceShipUp(request.BoardPosition, newShip),
-                ShipDirection.Left => PlaceShipLeft(request.BoardPosition, newShip),
-                _ => PlaceShipRight(request.BoardPosition, newShip),
-            };
+                if (!IsValidPosition(currentPosition) || OverlapsAnotherShip(currentPosition))
+                    return false;
+
+                newShip.BoardPositions.Add(currentPosition);
+
+                switch (request.Direction)
+                {
+                    case ShipDirection.Down:
+                        currentPosition.Y++;
+                        break;
+                    case ShipDirection.Up:
+                        currentPosition.Y--;
+                        break;
+                    case ShipDirection.Left:
+                        currentPosition.X--;
+                        break;
+                    default:
+                        currentPosition.X++;
+                        break;
+                }
+            }
+
+            AddShipToBoard(newShip);
+            return true;
         }
 
         private bool IsValidPosition(Point boardPosition)
@@ -96,98 +118,18 @@ namespace BattleShipGame.BL
             boardPosition.Y >= 1 && boardPosition.Y <= yLimit;
         }
 
-        private bool PlaceShipRight(Point coordinate, Ship newShip)
-        {
-            int positionIndex = 0;
-            int maxY = coordinate.Y + newShip.BoardPositions.Length;
-
-            for (int i = coordinate.Y; i < maxY; i++)
-            {
-                var currentCoordinate = new Point(coordinate.X, i);
-
-                if (!IsValidPosition(currentCoordinate) || OverlapsAnotherShip(currentCoordinate))
-                    return false;
-
-                newShip.BoardPositions[positionIndex] = currentCoordinate;
-                positionIndex++;
-            }
-
-            AddShipToBoard(newShip);
-            return true;
-        }
-
-        private bool PlaceShipLeft(Point coordinate, Ship newShip)
-        {
-            int positionIndex = 0;
-            int minY = coordinate.Y - newShip.BoardPositions.Length;
-
-            for (int i = coordinate.Y; i > minY; i--)
-            {
-                var currentCoordinate = new Point(coordinate.X, i);
-
-                if (!IsValidPosition(currentCoordinate) || OverlapsAnotherShip(currentCoordinate))
-                    return false;
-
-                newShip.BoardPositions[positionIndex] = currentCoordinate;
-                positionIndex++;
-            }
-
-            AddShipToBoard(newShip);
-            return true;
-        }
-
-        private bool PlaceShipUp(Point coordinate, Ship newShip)
-        {
-            int positionIndex = 0;
-            int minX = coordinate.X - newShip.BoardPositions.Length;
-
-            for (int i = coordinate.X; i > minX; i--)
-            {
-                var currentCoordinate = new Point(i, coordinate.Y);
-
-                if (!IsValidPosition(currentCoordinate) || OverlapsAnotherShip(currentCoordinate))
-                    return false;
-
-                newShip.BoardPositions[positionIndex] = currentCoordinate;
-                positionIndex++;
-            }
-
-            AddShipToBoard(newShip);
-            return true;
-        }
-
-        private bool PlaceShipDown(Point coordinate, Ship newShip)
-        {
-            int positionIndex = 0;
-            int maxX = coordinate.X + newShip.BoardPositions.Length;
-
-            for (int i = coordinate.X; i < maxX; i++)
-            {
-                var currentCoordinate = new Point(i, coordinate.Y);
-
-                if (!IsValidPosition(currentCoordinate) || OverlapsAnotherShip(currentCoordinate))
-                    return false;
-
-                newShip.BoardPositions[positionIndex] = currentCoordinate;
-                positionIndex++;
-            }
-
-            AddShipToBoard(newShip);
-            return true;
-        }
-
         private void AddShipToBoard(Ship newShip)
         {
             Ships.Add(newShip);
         }
 
-        private bool OverlapsAnotherShip(Point coordinate)
+        private bool OverlapsAnotherShip(Point boardPosition)
         {
             foreach (Ship ship in Ships)
             {
                 if (ship != null)
                 {
-                    if (ship.BoardPositions.Contains(coordinate))
+                    if (ship.BoardPositions.Contains(boardPosition))
                         return true;
                 }
             }

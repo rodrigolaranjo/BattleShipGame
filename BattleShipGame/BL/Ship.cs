@@ -1,5 +1,5 @@
-﻿using System.Drawing;
-using System.Linq;
+﻿using System.Collections.Generic;
+using System.Drawing;
 
 namespace BattleShipGame.BL
 {
@@ -13,13 +13,13 @@ namespace BattleShipGame.BL
 
         public bool IsSunk => lifeRemaining == 0;
 
-        internal Point[] BoardPositions { get; set; }
+        internal List<Point> BoardPositions { get; set; }
 
         internal Ship(ShipType shipType)
         {
             this.shipType = shipType;
             lifeRemaining = (int)shipType;
-            BoardPositions = new Point[(int)shipType];
+            BoardPositions = new List<Point>();
         }
 
         BoardPositionStatus IShip.FireAtShip(Point position)
